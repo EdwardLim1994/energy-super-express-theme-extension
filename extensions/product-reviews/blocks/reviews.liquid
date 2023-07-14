@@ -14,6 +14,18 @@
   endif
 %}
 
+{% style %}
+  .review-summary {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+  }
+  @media only screen and (min-width: 992px) {
+    .review-summary {
+      border-bottom: none;
+      border-right: 1px solid rgba(0, 0, 0, 0.5);
+    }
+  }
+{% endstyle %}
+
 <div id="product-reviews" class="accordion-item">
   <input ref="shopUrl" hidden value="{{ shop.url }}">
   {% if hasLogin %}
@@ -46,7 +58,7 @@
       <div v-else>
         <div v-if="reviews.length > 0">
           <div class="row">
-            <div class="col-4 border-end d-flex flex-column justify-content-center align-items-center">
+            <div class="col-12 col-lg-4 review-summary d-flex flex-column justify-content-center align-items-center">
               <div class="d-flex justify-content-center column-gap-2 align-items-center">
                 <i class="bi bi-star-fill text-warning fs-1"></i>
                 <h1 class="mb-0">[[rating.average]]</h1>
@@ -65,19 +77,38 @@
                 </button>
               {% endif %}
             </div>
-            <div class="col-8 d-flex flex-column row-gap-3">
+            <div class="col-12 col-lg-8 d-flex flex-column row-gap-3">
               <div
-                v-for="(count, index) in rating.count"
-                :key="`rating-count-${index}`"
-                class="progress"
-                role="progressbar"
-                aria-label="Basic example"
-                aria-valuenow="0"
-                aria-valuemin="0"
-                aria-valuemax="100"
+                v-for="(count, key, index) in rating.count"
+                :key="`rating-count-${key}`"
+                class="row"
               >
-                <div class="progress-bar bg-warning" :style="{width: `${(count / 5) * 100}%`}">
-                  <span class="text-dark">[[count]]</span>
+                <div class="col-12 col-lg-4 d-flex align-items-center">
+                  <div class="d-flex justify-content-between justify-content-lg-start column-gap-1">
+                    <span v-for="(rate, i) in (index + 1)" :key="`rating-preview-positive-${i}`">
+                      <i class="bi bi-star-fill text-warning"></i
+                    ></span>
+                    <span
+                      v-for="(rate, i) in (5 - (index + 1))"
+                      :key="`rating-preview-negative-${i}`"
+                    >
+                      <i class="bi bi-star text-warning"></i
+                    ></span>
+                  </div>
+                </div>
+                <div class="col-12 col-lg-8 d-flex w-80 align-items-center">
+                  <div
+                    class="progress w-100"
+                    role="progressbar"
+                    aria-label="Basic example"
+                    aria-valuenow="0"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div class="progress-bar bg-warning" :style="{width: `${(count / 5) * 100}%`}">
+                      <span class="text-dark">[[count]]</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -111,7 +142,10 @@
                   <span>"</span>
                 </div>
               </div>
-              <div v-if="isHoveringSelfReview" class=" d-flex flex-column row-gap-2">
+              <div
+                v-if="isHoveringSelfReview && customerReview.id == review.id"
+                class=" d-flex flex-column row-gap-2"
+              >
                 <button
                   @click="formModalOperation = 'update'"
                   class="btn btn-outline-primary"
