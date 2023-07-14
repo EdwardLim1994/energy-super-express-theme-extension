@@ -1,0 +1,300 @@
+{% liquid
+  assign alreadyBought = 0
+  assign hasLogin = false
+
+  if customer
+    assign hasLogin = true
+    for order in customer.orders
+      for line_item in order.line_items
+        if line_item.product_id == product.id
+          assign alreadyBought = 1
+        endif
+      endfor
+    endfor
+  endif
+%}
+
+<div id="product-reviews" class="accordion-item">
+  <input ref="shopUrl" hidden value="{{ shop.url }}">
+  {% if hasLogin %}
+    <input ref="alreadyBought" hidden value="{{ alreadyBought }}">
+    <input ref="customerId" hidden value="{{ customer.id }}">
+  {% endif %}
+  <h2 class="accordion-header">
+    <button
+      class="accordion-button"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#product-review-content"
+      aria-expanded="true"
+      aria-controls="product-review-content"
+    >
+      <h4>Reviews</h4>
+    </button>
+  </h2>
+  <div
+    id="product-review-content"
+    class="accordion-collapse collapse show"
+    data-bs-parent="#product-accordion"
+  >
+    <div class="accordion-body">
+      <div v-if="isFetching" class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      <div v-else>
+        <div v-if="reviews.length > 0">
+          <div class="row">
+            <div class="col-4 border-end d-flex flex-column justify-content-center align-items-center">
+              <div class="d-flex justify-content-center column-gap-2 align-items-center">
+                <i class="bi bi-star-fill text-warning fs-1"></i>
+                <h1 class="mb-0">[[rating.average]]</h1>
+              </div>
+              <p class=" text-center">([[rating.total]] review[[rating.total > 1 ? 's' : '']])</p>
+              {% if alreadyBought == 1 %}
+                <button
+                  v-if="!customerHasReviewed"
+                  @click="formModalOperation = 'add'"
+                  class="btn btn-primary"
+                  type="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#review-modal"
+                >
+                  Leave a Review
+                </button>
+              {% endif %}
+            </div>
+            <div class="col-8 d-flex flex-column row-gap-3">
+              <div
+                v-for="(count, index) in rating.count"
+                :key="`rating-count-${index}`"
+                class="progress"
+                role="progressbar"
+                aria-label="Basic example"
+                aria-valuenow="0"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <div class="progress-bar bg-warning" :style="{width: `${(count / 5) * 100}%`}">
+                  <span class="text-dark">[[count]]</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr>
+          <div
+            class="p-3"
+            v-for="(review, i) in reviews"
+            :key="`product-review-${review.id}`"
+            {% if hasLogin %}
+              @mouseover="handleHoverIn(review.customer_id)"
+              @mouseleave="handleHoverOut(review.customer_id)"
+            {% endif %}
+          >
+            <div class="d-flex justify-content-between">
+              <div>
+                <div class="d-flex column-gap-1">
+                  <span v-for="(rate, index) in review.rating" :key="`rating-positive-${customer_name}-${index}`">
+                    <i class="bi bi-star-fill text-warning"></i
+                  ></span>
+                  <span
+                    v-for="(rate, index) in (5 - review.rating)"
+                    :key="`rating-negative-${customer_name}-${index}`"
+                  >
+                    <i class="bi bi-star text-warning"></i
+                  ></span>
+                </div>
+                <div class="py-3 d-flex">
+                  <span>"</span>
+                  <div>[[review.comment]]</div>
+                  <span>"</span>
+                </div>
+              </div>
+              <div v-if="isHoveringSelfReview" class=" d-flex flex-column row-gap-2">
+                <button
+                  @click="formModalOperation = 'update'"
+                  class="btn btn-outline-primary"
+                  type="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#review-modal"
+                >
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+                <button
+                  @click="formModalOperation = 'delete'"
+                  class="btn btn-outline-danger"
+                  type="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#review-modal"
+                >
+                  <i class="bi bi-trash-fill"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <p class="fst-italic">
+                <span class="opacity-75">[[review.updatedAt]]</span>
+                <span> by </span>
+                <span class="fs-5">[[review.customer_name]]</span>
+              </p>
+            </div>
+            <hr v-if="i < reviews.length - 1">
+          </div>
+        </div>
+        <div class="d-flex flex-column align-items-center" v-else>
+          <p>No review yet</p>
+          {% if alreadyBought == 1 %}
+            <button
+              @click="formModalOperation = 'add'"
+              class="btn btn-primary"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#review-modal"
+            >
+              Leave a Review
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <teleport to="#product-rating">
+    <div v-if="reviews.length > 0" class="product-detail--display align-items-center column-gap-2">
+      <div class="d-flex column-gap-1 align-items-lg-center">
+        <i class="bi bi-star-fill text-warning"></i>
+        <p class="mb-0">[[rating.average]]</p>
+        <p class="mb-0">([[rating.total]] review[[rating.total > 1 ? 's' : '']])</p>
+      </div>
+    </div>
+  </teleport>
+  {% if customer %}
+    <form
+      ref="reviewModal"
+      @submit.prevent="handleSubmittingReview(formModalOperation, {customer_id: {{ customer.id }}, customer_name:'{{ customer.name }}', product_id: {{ product.id }}})"
+      class="modal fade"
+      id="review-modal"
+      tabindex="-1"
+      aria-labelledby="review-modal-label"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="review-modal-label">
+              <span v-if="formModalOperation == 'add'">Leave a Review</span>
+              <span v-else-if="formModalOperation == 'update'">Update Review</span>
+              <span v-else-if="formModalOperation == 'delete'">Remove a Review</span>
+            </h1>
+            <button
+              type="button"
+              @click="formModalOperation = null"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="formModalOperation == 'add' || formModalOperation == 'update'">
+              <div class="mb-2">
+                <label for="review-rating">Rating</label>
+                <div class="d-flex justify-content-between">
+                  <div class="d-flex" id="review-rating">
+                    <button
+                      id="review-rating"
+                      type="button"
+                      class="btn fs-4"
+                      v-for="star in 5"
+                      :key="`review-rating-star-${star}`"
+                      @click="customerReview.rating.confirm = true"
+                      @mouseover="handleOnSelectRating(star)"
+                      @mouseleave="handleOnLeaveRating"
+                    >
+                      <i
+                        class="bi"
+                        :class="{'bi-star-fill text-warning': customerReview.rating.value >= star, 'bi-star': customerReview.rating.value < star}"
+                      ></i>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    v-if="customerReview.rating.confirm"
+                    class="btn btn-outline-primary"
+                    @click="handleResetRating"
+                  >
+                    <i class="bi bi-arrow-clockwise"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="mb-2">
+                <label for="review-comment">Comment</label>
+                <div class="input-group ">
+                  <input class="form-control" id="review-comment" v-model="customerReview.comment">
+                  <button
+                    type="button"
+                    @click="customerReview.comment = null"
+                    class="input-group-text"
+                    id="basic-addon2"
+                  >
+                    <i class="bi bi-x"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="formModalOperation == 'delete'">
+              <p>Are you sure to remove your review?</p>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" @click="formModalOperation = null" class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button
+              v-if="formModalOperation == 'add' "
+              :disabled="!customerReview.rating.confirm || customerReview.comment == null"
+              type="submit"
+              class="btn btn-primary"
+            >
+              <div v-if="isSubmitting" class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span v-else>Submit</span>
+            </button>
+            <button
+              v-if="formModalOperation == 'update'"
+              :disabled="(!customerReview.rating.confirm || customerReview.comment == null) || !isUpdateChanged"
+              type="submit"
+              class="btn btn-primary"
+            >
+              <div v-if="isSubmitting" class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span v-else>Submit</span>
+            </button>
+            <button
+              v-else-if="formModalOperation == 'delete'"
+              type="submit"
+              class="btn btn-danger"
+            >
+              <div v-if="isSubmitting" class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span v-else>Remove</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  {% endif %}
+</div>
+
+<script type="module" defer src="{{ "reviews.js" | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "Reviews",
+  "target": "section"
+}
+{% endschema %}

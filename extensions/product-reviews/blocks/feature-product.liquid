@@ -1,0 +1,94 @@
+{% liquid
+  assign products = block.settings.feature_products
+  assign product_items_id = ''
+%}
+
+<div id="feature-product" class="carousel slide py-3">
+  <div class="carousel-inner">
+    {% if products == empty %}
+      <div class="row">
+        <div class="col-12 col-md-6 shadow">
+          {{ 'product-1' | placeholder_svg_tag }}
+        </div>
+        <div class="col-12 col-md-6 p-5 d-flex flex-column align-items-center justify-content-center">
+          <p class="text-center fw-bold">Placeholder Product Title</p>
+          <h5>
+            {{ cart.currency.symbol -}}
+            {{- 10000 | divided_by: 100.00 }}
+          </h5>
+          <a class="btn btn-primary mt-3 w-50">View</a>
+        </div>
+      </div>
+    {% else %}
+      {% for product in products %}
+        <div class="carousel-item {% if forloop.index == 1 %}active{% endif %}">
+          <div class="row">
+            <div class="col-12 col-md-6 shadow">
+              {{ product.featured_image | image_url: width: 600 | image_tag: class: 'w-100' }}
+            </div>
+            <div class="col-12 col-md-6 p-5 d-flex flex-column align-items-center justify-content-center">
+              <p class="text-center fw-bold">{{ product.title }}</p>
+              <h5>
+                {%- if product.price_max != product.price_min -%}
+                  {{ cart.currency.symbol -}}
+                  {{- product.price_min | divided_by: 100.00 }} - {{ cart.currency.symbol -}}
+                  {{- product.price_max | divided_by: 100.00 -}}
+
+                {% else %}
+                  {{ cart.currency.symbol -}}
+                  {{- product.price_min | divided_by: 100.00 }}
+                {%- endif -%}
+              </h5>
+              <div v-if="rating.average" class="product-detail--display align-items-center column-gap-2 mb-2">
+                <div class="d-flex column-gap-1 align-items-lg-center">
+                  <i class="bi bi-star-fill text-warning"></i>
+                  <p class="mb-0">[[rating.average]]</p>
+                  <p class="mb-0">([[rating.total]] review[[rating.total > 1 ? 's' : '']])</p>
+                </div>
+              </div>
+              <a class="btn btn-primary mt-3 w-50" href="{{ shop.url }}/products/{{ product.handle }}">View</a>
+            </div>
+          </div>
+        </div>
+
+        {% if forloop.last %}
+          {% assign product_items_id = product.id | prepend: product_items_id %}
+        {% else %}
+          {% assign product_items_id = product.id | prepend: product_items_id | prepend: ',' %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
+  <button class="carousel-control-prev" type="button" data-bs-target="#feature-product" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Previous</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#feature-product" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Next</span>
+  </button>
+  <input ref="shopUrl" hidden value="{{ shop.url }}">
+  <input hidden ref="featuredProductsId" value="{{ product_items_id }}">
+</div>
+
+<script defer type="module" src="{{ 'feature-product.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "Feature Product",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "label": "Title",
+      "id": "title",
+      "default": "Feature Products"
+    },
+    {
+      "type": "product_list",
+      "id": "feature_products",
+      "label": "Feature Products"
+    }
+  ]
+}
+{% endschema %}

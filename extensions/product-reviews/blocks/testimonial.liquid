@@ -1,0 +1,117 @@
+<section id="testimonial" class="py-3">
+  <input ref="shopUrl" hidden value="{{ shop.url }}">
+  <input ref="count" hidden value="{{ block.settings.num_reviews }}">
+  <input ref="minRate" hidden value="{{ block.settings.min_rating }}">
+  <div v-if="reviews && reviews.length > 1">
+    <div class="px-3 {% if block.settings.center_header %}d-flex flex-column align-items-center{% endif %}">
+      <h3>{{ block.settings.header }}</h3>
+      <p>{{ block.settings.sub_header }}</p>
+    </div>
+    <section id="image-carousel" class="splide">
+      <div class="splide__track">
+        <ul class="splide__list">
+          <li
+            v-for="review in reviews"
+            style="width: 18rem;"
+            :key="`testimonial-review-${review.id}`"
+            class="splide__slide"
+          >
+            <div class="card w-100 h-auto">
+              <div class="card-body flex-column d-flex justify-content-center align-items-center row-gap-2">
+                <div class="d-flex column-gap-1 align-items-center justify-content-center">
+                  <div
+                    class=" fs-3"
+                    v-for="star in 5"
+                    :key="`review-rating-star-${star}`"
+                  >
+                    <i
+                      class="bi"
+                      :class="{'bi-star-fill text-warning': review.rating >= star, 'bi-star': review.rating < star}"
+                    ></i>
+                  </div>
+                </div>
+                <div class="d-flex flex-column w-100">
+                  <i class="bi bi-quote fs-5 opacity-50"></i>
+                  <p class="mb-0">[[review.comment]]</p>
+                </div>
+              </div>
+              <div class="card-footer">
+                <h5>[[review.customer_name]]</h5>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
+  <section class="d-flex flex-column justify-content-center align-items-center" v-else>
+    <h5>No review yet</h5>
+    <p>Currently there is no one purchase anything yet</p>
+  </section>
+</section>
+
+<script type="module" defer src="{{ "testimonial.js" | asset_url }}"></script>
+<link rel="stylesheet" href="{{ "testimonial.css" | asset_url }}">
+{% if block.settings.autoscroll %}
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/@splidejs/splide-extension-intersection@0.2.0/dist/js/splide-extension-intersection.min.js"
+    integrity="sha256-JKADUEtliYhbM/9Tqt7qaeQb7T2XmLEKqJ068n6tcq0="
+    crossorigin="anonymous"
+  ></script>
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/@splidejs/splide-extension-auto-scroll@0.5.3/dist/js/splide-extension-auto-scroll.min.js"
+    integrity="sha256-A+2opyqhvbBV8tbd9mIM8w9zvvMYHOawY03BQRtq7Kw="
+    crossorigin="anonymous"
+  ></script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Testimonial",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "label": "Header",
+      "id": "header",
+      "default": "Testimonial"
+    },
+    {
+      "type": "text",
+      "label": "Sub header",
+      "id": "sub_header",
+      "default": "See what our clients have said about our product"
+    },
+    {
+      "type": "checkbox",
+      "label": "Centered header?",
+      "id": "center_header",
+      "default": true
+    },
+    {
+      "type": "range",
+      "label": "Number of Reviews to show",
+      "id": "num_reviews",
+      "min": 3,
+      "max": 8,
+      "default": 3
+    },
+    {
+      "type": "range",
+      "label": "Minimal rating score to get",
+      "id": "min_rating",
+      "min": 1,
+      "max": 5,
+      "default": 4
+    },
+    {
+      "type": "checkbox",
+      "label": "Autoscroll?",
+      "id": "autoscroll",
+      "default": true
+    }
+  ]
+}
+{% endschema %}
