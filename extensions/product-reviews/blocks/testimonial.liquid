@@ -44,10 +44,12 @@
       </div>
     </section>
   </div>
-  <section class="d-flex flex-column justify-content-center align-items-center" v-else>
-    <h5>No review yet</h5>
-    <p>Currently there is no one purchase anything yet</p>
-  </section>
+  {% if block.settings.show_no_review %}
+    <section class="d-flex flex-column justify-content-center align-items-center" v-else>
+      <h5>No review yet</h5>
+      <p>Currently there is no one purchase anything yet</p>
+    </section>
+  {% endif %}
 </section>
 
 <script type="module" defer src="{{ "testimonial.js" | asset_url }}"></script>
@@ -83,6 +85,12 @@
       "label": "Sub header",
       "id": "sub_header",
       "default": "See what our clients have said about our product"
+    },
+    {
+      "type": "checkbox",
+      "label": "Show empty testimonial if no review?",
+      "id": "show_no_review",
+      "default": true
     },
     {
       "type": "checkbox",
